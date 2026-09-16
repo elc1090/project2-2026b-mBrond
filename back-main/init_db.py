@@ -1,22 +1,18 @@
-import os
+import json
 import re
 import unicodedata
 import uuid
-from decimal import Decimal
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash
-
 from models import Base, Category, Enterprise, Product, User
 from seed_data import ENTERPRISES, USERS
+import os
+from decimal import Decimal
 
-# ---------------------------------------------------------------------------
-# Configuração do Banco de Dados (SQLite Local / PostgreSQL Render)
-# ---------------------------------------------------------------------------
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
 if DATABASE_URL:
-    # O Render entrega a URL com "postgres://", mas o SQLAlchemy exige "postgresql://"
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     engine = create_engine(DATABASE_URL, echo=False, future=True)
@@ -33,9 +29,6 @@ DEFAULT_CATEGORIES = ["Artesanato", "Alimentação", "Moda", "Plantas", "Cosmét
 PASSWORD_HASH_METHOD = "pbkdf2:sha256"
 
 
-# ---------------------------------------------------------------------------
-# Helpers e Seeders
-# ---------------------------------------------------------------------------
 def _slugify(value: str) -> str:
     if not value:
         return ""
@@ -97,9 +90,10 @@ def _normalize_seed_product_price(product: dict) -> dict:
 
 
 def _seed_product(session, enterprise_id: str, product: dict) -> None:
-    if session.query(Product).filter_by(id=product["id"]).first():
+    existing_prod = session.query(Product).filter_by(id=product["id"]).first()
+    if existing_prod:
         return
-        
+
     normalized_price = _normalize_seed_product_price(product)
     prod = Product(
         id=product["id"],
@@ -133,7 +127,8 @@ def _seed_enterprises_and_products(session) -> None:
                 tags=e.get("tags", []),
             )
             session.add(ent)
-            
+            session.flush()
+
         for p in e.get("products", []):
             _seed_product(session, e["id"], p)
 
@@ -162,32 +157,22 @@ def _upgrade_plain_text_passwords(session) -> None:
             session.add(db_user)
 
 
-# ---------------------------------------------------------------------------
-# Função Principal
-# ---------------------------------------------------------------------------
 def init_db(drop=False):
-    if drop:
-        Base.metadata.drop_all(engine)
-        
+    if drop and DB_PATH and os.path.exists(DB_PATH):
+        os.remove(DB_PATH)
     Base.metadata.create_all(engine)
 
     session = Session()
-    try:
-        _seed_categories(session)
-        _seed_users(session)                      # 1. Usuários criados PRIMEIRO
-        _seed_enterprises_and_products(session)   # 2. Empresas e produtos DEPOIS
-        _upgrade_plain_text_passwords(session)
-        session.commit()
-        print("Banco de dados inicializado e populado com sucesso!")
-    except Exception as e:
-        session.rollback()
-        print(f"Erro ao popular o banco de dados: {e}")
-        raise e
-    finally:
-        session.close()
+    _seed_categories(session)
+    _seed_enterprises_and_products(session)
+    _seed_users(session)
+    _upgrade_plain_text_passwords(session)
+    session.commit()
+    session.close()
 
 
 if __name__ == "__main__":
     print("Inicializando banco de dados...")
     init_db(drop=False)
-    print("Concluído.")
+    target = DATABASE_URL or DB_PATH
+    print("Concluido:", target)
