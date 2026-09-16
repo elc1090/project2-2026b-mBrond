@@ -21,7 +21,16 @@ import datetime
 from functools import wraps
 from dotenv import load_dotenv
 
+load_dotenv()
+
 app = Flask(__name__)
+
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
+if FRONTEND_URL and FRONTEND_URL.strip() != "*":
+    allowed_origins = [origin.strip() for origin in FRONTEND_URL.split(",") if origin.strip()]
+    CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
+else:
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.environ.get("DATA_DIR") or BASE_DIR
@@ -89,21 +98,22 @@ def process_base64_image(data_url):
     except ValueError as e:
         abort(400, str(e))
 
-engine = create_engine(f"sqlite:///{DB_PATH}", echo=False, future=True)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    # Render and Heroku use postgres://, but SQLAlchemy 1.4+ requires postgresql://
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(DATABASE_URL, echo=False, future=True)
+else:
+    engine = create_engine(f"sqlite:///{DB_PATH}", echo=False, future=True)
+
 Session = sessionmaker(bind=engine)
 
 
 @app.after_request
 def add_security_headers(response):
-    response.headers.setdefault(
-        "Content-Security-Policy",
-        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-        "script-src 'self'; connect-src 'self' https://test-vitrine.brizzigui.com https://vitrine.brizzigui.com; "
-        "base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
-    )
-    response.headers.setdefault("X-Frame-Options", "DENY")
-    response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     return response
 
 PRICE_MODES = {"single", "range", "hidden"}
@@ -114,31 +124,33 @@ INVALID_EMAIL_ERROR = "invalid email"
 
 def ensure_schema():
     Base.metadata.create_all(engine)
-    inspector = inspect(engine)
-    if inspector.has_table("products"):
-        columns = {column["name"] for column in inspector.get_columns("products")}
-        if "images" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE products ADD COLUMN images JSON DEFAULT '[]'"))
+    try:
+        inspector = inspect(engine)
+        if inspector.has_table("products"):
+            columns = {column["name"] for column in inspector.get_columns("products")}
+            if "images" not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text("ALTER TABLE products ADD COLUMN images JSON DEFAULT '[]'"))
 
-    if inspector.has_table("categories"):
-        columns = {column["name"] for column in inspector.get_columns("categories")}
-        statements = []
-        if "color" not in columns:
-            statements.append("ALTER TABLE categories ADD COLUMN color TEXT")
-        if "emoji" not in columns:
-            statements.append("ALTER TABLE categories ADD COLUMN emoji TEXT")
-        if statements:
-            with engine.begin() as connection:
-                for statement in statements:
-                    connection.execute(text(statement))
+        if inspector.has_table("categories"):
+            columns = {column["name"] for column in inspector.get_columns("categories")}
+            statements = []
+            if "color" not in columns:
+                statements.append("ALTER TABLE categories ADD COLUMN color TEXT")
+            if "emoji" not in columns:
+                statements.append("ALTER TABLE categories ADD COLUMN emoji TEXT")
+            if statements:
+                with engine.begin() as connection:
+                    for statement in statements:
+                        connection.execute(text(statement))
+    except Exception as e:
+        print(f"Notice: schema inspection skipped: {e}")
 
 
 ensure_schema()
 
 # JWT auth configuration
-load_dotenv()
-JWT_SECRET = os.environ.get("JWT_SECRET")
+JWT_SECRET = os.environ.get("JWT_SECRET") or "hubis-secret-key-change-in-production"
 JWT_ALGORITHM = "HS256"
 JWT_EXP_HOURS = 24
 
@@ -983,29 +995,24 @@ def upload_file():
     else:
         abort(400, "Invalid file type")
 
-def define_cors_policy(debug):
-    if debug:
-        CORS(app)
-    else:
-        CORS(
-            app,
-            resources={
-                r"/api/*": {
-                    "origins": [
-                        "https://test-vitrine.brizzigui.com",
-                        "https://vitrine.brizzigui.com",
-                    ]
-                }
-            },
-        )
-
 if __name__ == "__main__":
+    # Auto-seed database if file does not exist
     if not os.path.exists(DB_PATH):
-        print("DB not found, run init_db.py to create and seed the database.")
+        print("Database not found. Seeding initial data...")
+        try:
+            from init_db import init_db
+            init_db(drop=False)
+        except Exception as e:
+            print(f"Notice: Could not automatically seed DB: {e}")
+
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("DEBUG", "False").lower() in ("true", "1")
+
     if len(sys.argv) == 3:
-        port = int(sys.argv[1])
-        debug = bool(sys.argv[2] == "True")
-    
-    define_cors_policy(debug)
+        try:
+            port = int(sys.argv[1])
+            debug = bool(sys.argv[2] == "True")
+        except ValueError:
+            pass
 
     app.run(host="0.0.0.0", port=port, debug=debug)
