@@ -7,7 +7,7 @@ services:
     name: hubis-backend
     runtime: python
     plan: free
-    rootDir: back-main
+    rootDir: backend
     buildCommand: pip install -r requirements.txt && python init_db.py
     startCommand: gunicorn app:app
     envVars:
@@ -26,7 +26,7 @@ services:
   - type: web
     name: hubis-frontend
     runtime: static
-    rootDir: front-main
+    rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     routes:
