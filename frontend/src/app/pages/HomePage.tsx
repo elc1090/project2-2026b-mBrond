@@ -10,6 +10,7 @@ import { getPrimaryProductImage } from "../utils/productImages";
 import { getProductPriceLabel } from "../utils/pricing";
 import { normalizeBrazilPhone } from "../utils/validation";
 import hubMascotGif from "../../media/GIF TODOS.gif";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
 //const HERO_BG = "https://images.unsplash.com/photo-1761666520258-e6de315a61c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb21tdW5pdHklMjBlbnRyZXByZW5ldXJzaGlwJTIwc21hbGwlMjBidXNpbmVzcyUyMHBlb3BsZXxlbnwxfHx8fDE3NzQzODMxMTN8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
@@ -620,10 +621,18 @@ function FeaturedProductCard({
         aria-label={`Ver ${product.name} em ${enterprise.name}`}
       >
         {image ? (
-          <img
+          <ImageWithFallback
             src={image}
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+            fallback={
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-gray-400">
+                <ImageIcon className="h-9 w-9" />
+                <span className="text-xs font-bold" style={{ fontFamily: "Nunito, sans-serif" }}>
+                  Sem imagem
+                </span>
+              </div>
+            }
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-gray-400">

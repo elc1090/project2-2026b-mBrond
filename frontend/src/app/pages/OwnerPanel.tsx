@@ -789,10 +789,15 @@ export function OwnerPanel() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
           {/* Cover image */}
           <div className="relative h-40 sm:h-52 overflow-hidden">
-            <img
+            <ImageWithFallback
               src={e.coverImage}
               alt={e.name}
               className="w-full h-full object-cover"
+              fallback={
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                  <Store className="w-10 h-10 text-gray-400" />
+                </div>
+              }
             />
             <div
               className="absolute inset-0"

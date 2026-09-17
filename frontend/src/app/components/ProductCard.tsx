@@ -5,6 +5,7 @@ import { ProductImageLightbox } from "./ProductImageLightbox";
 import { getProductImages } from "../utils/productImages";
 import { getProductPriceLabel } from "../utils/pricing";
 import { normalizeBrazilPhone } from "../utils/validation";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface ProductCardProps {
   product: Product;
