@@ -1538,10 +1538,15 @@ export function AdminPanel() {
                         key={e.id}
                         className="flex items-center gap-3 sm:gap-4 bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm"
                       >
-                        <img
+                        <ImageWithFallback
                           src={e.coverImage}
                           alt={e.name}
                           className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl object-cover flex-shrink-0"
+                          fallback={
+                            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <Store className="w-5 h-5 text-gray-400" />
+                            </div>
+                          }
                         />
                         <div className="flex-1 min-w-0">
                           <p
@@ -1612,10 +1617,15 @@ export function AdminPanel() {
                     >
                       {/* Enterprise header row */}
                       <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-                        <img
+                        <ImageWithFallback
                           src={e.coverImage}
                           alt={e.name}
                           className="w-12 sm:w-14 h-12 sm:h-14 rounded-xl object-cover flex-shrink-0"
+                          fallback={
+                            <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <Store className="w-6 h-6 text-gray-400" />
+                            </div>
+                          }
                         />
                         <div className="flex-1 min-w-0">
                           <p
@@ -1714,10 +1724,15 @@ export function AdminPanel() {
                                 >
                                   {getPrimaryProductImage(p) && (
                                     <div className="relative h-10 w-10 flex-shrink-0">
-                                      <img
+                                      <ImageWithFallback
                                         src={getPrimaryProductImage(p)}
                                         alt={p.name}
                                         className="h-10 w-10 rounded-lg object-cover"
+                                        fallback={
+                                          <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                                            <ShoppingBag className="w-4 h-4 text-gray-400" />
+                                          </div>
+                                        }
                                       />
                                       {getProductImages(p).length > 1 && (
                                         <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] font-black text-white shadow">
