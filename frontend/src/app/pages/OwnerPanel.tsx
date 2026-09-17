@@ -34,6 +34,7 @@ import { getProductPriceLabel, resolvePriceMode } from "../utils/pricing";
 import { getPrimaryProductImage, getProductImages } from "../utils/productImages";
 import QRCode from "react-qr-code";
 import { getCategoryColors } from "../utils/categoryStyle";
+import logoHubis from "../../media/logo-hubis.png";
 
 // ── SHARED COMPONENTS ──────────────────────────────────────────────────────
 
@@ -718,7 +719,7 @@ export function OwnerPanel() {
           <div className="flex items-center gap-3">
             <Link to="/">
               <ImageWithFallback
-                src="/logo-hubis.png"
+                src={logoHubis}
                 alt="HUB IS"
                 className="h-8 w-auto object-contain"
               />
