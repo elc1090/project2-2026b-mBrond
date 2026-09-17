@@ -47,6 +47,7 @@ import { getProductPriceLabel, resolvePriceMode } from "../utils/pricing";
 import { getPrimaryProductImage, getProductImages } from "../utils/productImages";
 import { SubmitButton } from "../components/SubmitButton";
 import { getCategoryColors } from "../utils/categoryStyle";
+import logoHubis from "../../media/logo-hubis.png";
 
 type Tab = "dashboard" | "enterprises" | "users" | "categories";
 // ── MODAL ──────────────────────────────────────────────────────────────────
@@ -1274,7 +1275,7 @@ export function AdminPanel() {
           <div className="p-5 border-b border-gray-100">
             <Link to="/">
               <ImageWithFallback
-                src="/logo-hubis.png"
+                src={logoHubis}
                 alt="HUB IS"
                 className="h-10 w-auto object-contain"
               />
@@ -1361,7 +1362,7 @@ export function AdminPanel() {
           <div className="md:hidden bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
             <Link to="/">
               <ImageWithFallback
-                src="/logo-hubis.png"
+                src={logoHubis}
                 alt="HUB IS"
                 className="h-8 w-auto"
               />

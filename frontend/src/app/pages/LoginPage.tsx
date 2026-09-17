@@ -4,6 +4,7 @@ import { Eye, EyeOff, LogIn, ArrowLeft, Lock, Mail } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { isValidEmail, isValidPassword } from "../utils/validation";
+import logoHubis from "../../media/logo-hubis.png";
 
 export function LoginPage() {
   useEffect(() => {
@@ -113,7 +114,7 @@ export function LoginPage() {
             <div className="flex justify-center mb-4">
               <div className="h-18 bg-white/80 rounded-2xl px-3 flex items-center">
                 <ImageWithFallback
-                  src="/logo-hubis.png"
+                  src={logoHubis}
                   alt="HUB IS"
                   className="h-14 w-auto object-contain"
                 />
@@ -289,6 +290,8 @@ export function LoginPage() {
                 {loading ? (
                   <>
                     <svg
+                      width="16"
+                      height="16"
                       className="animate-spin w-4 h-4"
                       fill="none"
                       viewBox="0 0 24 24"

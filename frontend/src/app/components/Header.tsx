@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { Menu, X, LogIn, LogOut, LayoutDashboard, Store } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useAuth } from "../contexts/AuthContext";
+import logoHubis from "../../media/logo-hubis.png";
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,8 +34,11 @@ export function Header() {
           >
             <div className="h-14 md:h-16 overflow-hidden">
               <ImageWithFallback
-                src="/logo-hubis.png"
+                src={logoHubis}
                 alt="HUB IS - Incubadora Social UFSM"
+                width={128}
+                height={64}
+                style={{ maxHeight: "4rem", width: "auto" }}
                 className="h-full w-auto object-contain"
               />
             </div>
