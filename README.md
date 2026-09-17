@@ -1,87 +1,141 @@
-# Hubis - Vitrine Virtual
+# Projeto: Aplicação com persistência de dados em backend
 
-Projeto composto por:
-- **Backend:** Python + Flask + SQLAlchemy + JWT + Gunicorn (`/backend`)
-- **Frontend:** React + Vite + TailwindCSS (`/frontend`)
 
----
+![Substitua a imagem ao lado por um GIF/WEBP animado mostrando seu projeto](ezgif-57375ac9a29b055c.gif "GIF animado do projeto")
 
-## Como Rodar Localmente
 
-### 1. Backend
-```bash
-cd backend
-python -m venv venv
 
-# Windows:
-venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
+## Acesso
 
-pip install -r requirements.txt
-python init_db.py
-python app.py
+[Frontend](https://hubis-frontend.onrender.com/
+)
+[Backend](https://hubis-backend.onrender.com/)
+
+Obs: Necessário inicializar o back entrando na url para mostrar dados no front
+
+
+## Desenvolvedor(a)
+- Miguel Brondani
+- Ciência da Computação
+
+
+## Proposta
+ Alteração no Vitrine Hubis: identificar e corrigir ‘flash’ da Logo ao entrar na página. Revisar rotas e validações. Fazer deploy no render, usar PostgreSQL.
+
+
+
+## Parceria/cliente/usuário
+Carlos Eduardo Velozo
+
+## Feedback/comentário da parceria/cliente/usuário
+O resultado da atualização no Vitrine Hubis atende os requisitos. A correção do "flash" branco ao carregar a página deixou a navegação fluida e visualmente agradável. Deploy no Render integrado ao PostgreSQL está rodando bem.
+
+## Desenvolvimento
+
+### Processo
+
+Fazer deploy no render. Havia instruções de como executar o projeto localmente, mas não em plataforma de 3ºs. Já havia feito deploy na plataforma, mas como 'mono repositorio'. Encontrei a solução de 'Blueprint', onde com um arquivo .yaml é possível definir a estrutura dos serviços.
+
+Tive problema com CORS, já que o front e back ficaram em serviços separados. O back recusava toda comunicação do front. Necessário configurar uso de variáveis de ambiente para referenciar as URLs.
+
+O problema do Flash parecia ser o logo inicialmente. Gravei o flash da tela, e observando melhor deu para ver que alguns elementos da página carregavam sem estilo. Descobri a existencia do Flash of Unstyled Content (FOUC).
+
+Observei alguns problemas de imagens, que não eram carregadas corretamente no deploy. Criei pastas no frontend para guardar corretamente o logo, favicon e gif usados.
+Tentei corrigir blocos de imagens cujas referências não existiam mais usando o componente já existente ImageWithFallback. Trocando as tags < img > por tal componente a interface fique mais *bonita* (não finalizado).  
+
+
+### Trechos de código
+
+
+## Blueprint: render.yaml
+```yaml
+databases:
+  - name: hubis-db
+    plan: free
+
+services:
+  - type: web
+    name: hubis-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python init_db.py
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hubis-db
+          property: connectionString
+
+  - type: web
+    name: hubis-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
 ```
-A API estará rodando em `http://localhost:5000`.
 
-### 2. Frontend
-Em outro terminal:
-```bash
-cd frontend
-npm install
-npm run dev
+## CORS
+```python
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
+if FRONTEND_URL and FRONTEND_URL.strip() != "*":
+    allowed_origins = [origin.strip() for origin in FRONTEND_URL.split(",") if origin.strip()]
+    CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
+else:
+    CORS(app, resources={r"/*": {"origins": "*"}})
 ```
-O Frontend estará rodando em `http://localhost:5173`.
+
+## PostgreSQL
+```python
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(DATABASE_URL, echo=False, future=True)
+else:
+    engine = create_engine(f"sqlite:///{DB_PATH}", echo=False, future=True)
+```
+
+
+
+
+## Tecnologias
+
+### Linguagens e afins
+
+Substitua este trecho por uma lista detalhada de tecnologias utilizadas:
+- HTML/CSS
+- Python
+- Flask
+- Typescript / React
+- Tailwind CSS
+- JWT
+- Gunicorn
+
+### Ambiente de desenvolvimento
+
+- VSCODE
+- Claude
+- Gemini
+- Firefox devtools
+
+## Referências e créditos
+
+- Material de FOUC: [wikipedia](https://en.wikipedia.org/wiki/Flash_of_unstyled_content) e [youtube](https://www.youtube.com/watch?v=rO1tT_P5_ck&t)
+- Claude
+
+
+
 
 ---
-
-## Como Fazer Deploy no Render
-
-### Opção A: Deploy Automático via Blueprint (Mais Fácil)
-1. Suba este repositório no seu GitHub.
-2. Acesse o [Dashboard do Render](https://dashboard.render.com).
-3. Clique em **New +** e selecione **Blueprint**.
-4. Conecte o repositório do GitHub. O Render lerá o arquivo `render.yaml` e criará automaticamente:
-   - O serviço **hubis-backend** (Web Service).
-   - O serviço **hubis-frontend** (Static Site com redirect de SPA configurado).
-5. Após a criação:
-   - Copie a URL do seu backend gerada pelo Render (ex: `https://hubis-backend.onrender.com`).
-   - No serviço do frontend no Render, vá em **Environment** e adicione a variável:
-     - `VITE_API_URL` = `https://hubis-backend.onrender.com` (sem barra no final).
-   - Clique em **Manual Deploy -> Deploy latest commit** no frontend.
-
----
-
-### Opção B: Deploy Manual no Render
-
-#### 1. Criar o Backend (Web Service)
-- No Render: **New +** -> **Web Service**.
-- Conecte seu repositório.
-- Preencha:
-  - **Name:** `hubis-backend`
-  - **Root Directory:** `backend`
-  - **Runtime:** `Python 3`
-  - **Build Command:** `pip install -r requirements.txt && python init_db.py`
-  - **Start Command:** `gunicorn app:app`
-- Em **Environment Variables**:
-  - `JWT_SECRET`: Insira uma chave secreta qualquer (ex: `chave_super_secreta_123`).
-- Clique em **Create Web Service**.
-- Aguarde o deploy finalizar e copie a URL do backend gerada pelo Render.
-
-#### 2. Criar o Frontend (Static Site)
-- No Render: **New +** -> **Static Site**.
-- Conecte o mesmo repositório.
-- Preencha:
-  - **Name:** `hubis-frontend`
-  - **Root Directory:** `frontend`
-  - **Build Command:** `npm install && npm run build`
-  - **Publish Directory:** `dist`
-- Em **Environment Variables**:
-  - `VITE_API_URL`: cole a URL do seu backend (ex: `https://hubis-backend.onrender.com`).
-- Em **Redirects/Rewrites**:
-  - Clique em **Add Rule**:
-    - **Source:** `/*`
-    - **Destination:** `/index.html`
-    - **Action:** `Rewrite`
-  *(Isso garante que rotas como `/login` funcionem sem erro 404 ao atualizar a página).*
-- Clique em **Create Static Site**.
+Projeto entregue para a disciplina de [Desenvolvimento de Software para a Web](http://github.com/andreainfufsm/elc1090-2026b) em 2026b
